@@ -229,6 +229,9 @@ export function WorktreeSelector({
                     placeholder="Filter branches..."
                     value={branchFilter}
                     onChange={(e) => setBranchFilter(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onKeyUp={(e) => e.stopPropagation()}
+                    onKeyPress={(e) => e.stopPropagation()}
                     className="h-7 pl-7 text-xs"
                     autoFocus
                   />
