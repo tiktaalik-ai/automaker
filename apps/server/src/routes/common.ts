@@ -5,8 +5,13 @@
 import { createLogger } from "../lib/logger.js";
 import fs from "fs/promises";
 import path from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 type Logger = ReturnType<typeof createLogger>;
+
+const execAsync = promisify(exec);
+const logger = createLogger("Common");
 
 // Max file size for generating synthetic diffs (1MB)
 const MAX_SYNTHETIC_DIFF_SIZE = 1024 * 1024;
@@ -23,12 +28,62 @@ const BINARY_EXTENSIONS = new Set([
   ".pyc", ".pyo", ".class", ".o", ".obj",
 ]);
 
+// Status map for git status codes
+const GIT_STATUS_MAP: Record<string, string> = {
+  M: "Modified",
+  A: "Added",
+  D: "Deleted",
+  R: "Renamed",
+  C: "Copied",
+  U: "Updated",
+  "?": "Untracked",
+};
+
+/**
+ * File status interface for git status results
+ */
+export interface FileStatus {
+  status: string;
+  path: string;
+  statusText: string;
+}
+
 /**
  * Check if a file is likely binary based on extension
  */
 function isBinaryFile(filePath: string): boolean {
   const ext = path.extname(filePath).toLowerCase();
   return BINARY_EXTENSIONS.has(ext);
+}
+
+/**
+ * Check if a path is a git repository
+ */
+export async function isGitRepo(repoPath: string): Promise<boolean> {
+  try {
+    await execAsync("git rev-parse --is-inside-work-tree", { cwd: repoPath });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Parse the output of `git status --porcelain` into FileStatus array
+ */
+export function parseGitStatus(statusOutput: string): FileStatus[] {
+  return statusOutput
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const statusChar = line[0];
+      const filePath = line.slice(3);
+      return {
+        status: statusChar,
+        path: filePath,
+        statusText: GIT_STATUS_MAP[statusChar] || "Unknown",
+      };
+    });
 }
 
 /**
@@ -67,10 +122,11 @@ index 0000000..0000000
 
     // Read file content
     const content = await fs.readFile(fullPath, "utf-8");
+    const hasTrailingNewline = content.endsWith("\n");
     const lines = content.split("\n");
 
     // Remove trailing empty line if the file ends with newline
-    if (lines.length > 0 && lines[lines.length - 1] === "") {
+    if (lines.length > 0 && lines.at(-1) === "") {
       lines.pop();
     }
 
@@ -78,16 +134,24 @@ index 0000000..0000000
     const lineCount = lines.length;
     const addedLines = lines.map(line => `+${line}`).join("\n");
 
-    return `diff --git a/${relativePath} b/${relativePath}
+    let diff = `diff --git a/${relativePath} b/${relativePath}
 new file mode 100644
 index 0000000..0000000
 --- /dev/null
 +++ b/${relativePath}
 @@ -0,0 +1,${lineCount} @@
-${addedLines}
-`;
+${addedLines}`;
+
+    // Add "No newline at end of file" indicator if needed
+    if (!hasTrailingNewline && content.length > 0) {
+      diff += "\n\\ No newline at end of file";
+    }
+
+    return diff + "\n";
   } catch (error) {
-    // If we can't read the file, return a placeholder diff
+    // Log the error for debugging
+    logger.error(`Failed to generate synthetic diff for ${fullPath}:`, error);
+    // Return a placeholder diff
     return `diff --git a/${relativePath} b/${relativePath}
 new file mode 100644
 index 0000000..0000000
@@ -162,8 +226,9 @@ export async function listAllFilesInDirectory(
         files.push(entryRelPath);
       }
     }
-  } catch {
-    // Ignore errors (permission denied, etc.)
+  } catch (error) {
+    // Log the error to help diagnose file system issues
+    logger.error(`Error reading directory ${fullPath}:`, error);
   }
 
   return files;
@@ -175,10 +240,10 @@ export async function listAllFilesInDirectory(
  */
 export async function generateDiffsForNonGitDirectory(
   basePath: string
-): Promise<{ diff: string; files: Array<{ status: string; path: string; statusText: string }> }> {
+): Promise<{ diff: string; files: FileStatus[] }> {
   const allFiles = await listAllFilesInDirectory(basePath);
 
-  const files = allFiles.map(filePath => ({
+  const files: FileStatus[] = allFiles.map(filePath => ({
     status: "?",
     path: filePath,
     statusText: "New",
@@ -192,6 +257,47 @@ export async function generateDiffsForNonGitDirectory(
   return {
     diff: syntheticDiffs.join(""),
     files,
+  };
+}
+
+/**
+ * Get git repository diffs for a given path
+ * Handles both git repos and non-git directories
+ */
+export async function getGitRepositoryDiffs(
+  repoPath: string
+): Promise<{ diff: string; files: FileStatus[]; hasChanges: boolean }> {
+  // Check if it's a git repository
+  const isRepo = await isGitRepo(repoPath);
+
+  if (!isRepo) {
+    // Not a git repo - list all files and treat them as new
+    const result = await generateDiffsForNonGitDirectory(repoPath);
+    return {
+      diff: result.diff,
+      files: result.files,
+      hasChanges: result.files.length > 0,
+    };
+  }
+
+  // Get git diff and status
+  const { stdout: diff } = await execAsync("git diff HEAD", {
+    cwd: repoPath,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  const { stdout: status } = await execAsync("git status --porcelain", {
+    cwd: repoPath,
+  });
+
+  const files = parseGitStatus(status);
+
+  // Generate synthetic diffs for untracked (new) files
+  const combinedDiff = await appendUntrackedFileDiffs(repoPath, diff, files);
+
+  return {
+    diff: combinedDiff,
+    files,
+    hasChanges: files.length > 0,
   };
 }
 
