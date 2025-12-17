@@ -38,9 +38,10 @@ export function createListBranchesHandler() {
       const currentBranch = currentBranchOutput.trim();
 
       // List all local branches
-      // Use %(refname:short) without quotes - quotes are preserved on Windows
+      // Use double quotes around the format string for cross-platform compatibility
+      // Single quotes are preserved literally on Windows; double quotes work on both
       const { stdout: branchesOutput } = await execAsync(
-        "git branch --format=%(refname:short)",
+        'git branch --format="%(refname:short)"',
         { cwd: worktreePath }
       );
 
