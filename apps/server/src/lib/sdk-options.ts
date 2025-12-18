@@ -174,6 +174,7 @@ export function createSpecGenerationOptions(
     allowedTools: [...TOOL_PRESETS.specGeneration],
     ...(config.systemPrompt && { systemPrompt: config.systemPrompt }),
     ...(config.abortController && { abortController: config.abortController }),
+    ...(config.outputFormat && { outputFormat: config.outputFormat }),
   };
 }
 
