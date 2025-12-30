@@ -18,6 +18,7 @@ import dotenv from 'dotenv';
 import { createEventEmitter, type EventEmitter } from './lib/events.js';
 import { initAllowedPaths } from '@automaker/platform';
 import { authMiddleware, validateWsConnectionToken, checkRawAuthentication } from './lib/auth.js';
+import { requireJsonContentType } from './middleware/require-json-content-type.js';
 import { createAuthRoutes } from './routes/auth/index.js';
 import { createFsRoutes } from './routes/fs/index.js';
 import { createHealthRoutes, createDetailedHandler } from './routes/health/index.js';
@@ -172,6 +173,10 @@ setInterval(() => {
     console.log(`[Server] Cleaned up ${cleaned} stale validation entries`);
   }
 }, VALIDATION_CLEANUP_INTERVAL_MS);
+
+// Require Content-Type: application/json for all API POST/PUT/PATCH requests
+// This helps prevent CSRF and content-type confusion attacks
+app.use('/api', requireJsonContentType);
 
 // Mount API routes - health and auth are unauthenticated
 app.use('/api/health', createHealthRoutes());
