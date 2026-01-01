@@ -490,6 +490,7 @@ export interface AppState {
 
   // Phase Model Settings - per-phase AI model configuration
   phaseModels: PhaseModelConfig;
+  favoriteModels: string[];
 
   // Cursor CLI Settings (global)
   enabledCursorModels: CursorModelId[]; // Which Cursor models are available in feature modal
@@ -787,6 +788,7 @@ export interface AppActions {
   setPhaseModel: (phase: PhaseModelKey, model: ModelAlias | CursorModelId) => Promise<void>;
   setPhaseModels: (models: Partial<PhaseModelConfig>) => Promise<void>;
   resetPhaseModels: () => Promise<void>;
+  toggleFavoriteModel: (modelId: string) => void;
 
   // Cursor CLI Settings actions
   setEnabledCursorModels: (models: CursorModelId[]) => void;
@@ -1007,6 +1009,7 @@ const initialState: AppState = {
   enhancementModel: 'sonnet', // Default to sonnet for feature enhancement
   validationModel: 'opus', // Default to opus for GitHub issue validation
   phaseModels: DEFAULT_PHASE_MODELS, // Phase-specific model configuration
+  favoriteModels: [],
   enabledCursorModels: getAllCursorModelIds(), // All Cursor models enabled by default
   cursorDefaultModel: 'auto', // Default to auto selection
   autoLoadClaudeMd: false, // Default to disabled (user must opt-in)
@@ -1673,6 +1676,14 @@ export const useAppStore = create<AppState & AppActions>()(
         // Sync to server settings file
         const { syncSettingsToServer } = await import('@/hooks/use-settings-migration');
         await syncSettingsToServer();
+      },
+      toggleFavoriteModel: (modelId) => {
+        const current = get().favoriteModels;
+        if (current.includes(modelId)) {
+          set({ favoriteModels: current.filter((id) => id !== modelId) });
+        } else {
+          set({ favoriteModels: [...current, modelId] });
+        }
       },
 
       // Cursor CLI Settings actions
