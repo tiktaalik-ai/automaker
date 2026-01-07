@@ -744,21 +744,25 @@ export class CodexProvider extends BaseProvider {
       }
 
       const configOverrides = buildConfigOverrides(overrides);
-      const globalArgs = [CODEX_SKIP_GIT_REPO_CHECK_FLAG, CODEX_APPROVAL_FLAG, approvalPolicy];
+      const preExecArgs: string[] = [];
+
       if (searchEnabled) {
-        globalArgs.push(CODEX_SEARCH_FLAG);
+        preExecArgs.push(CODEX_SEARCH_FLAG);
       }
 
       // Add additional directories with write access
       if (codexSettings.additionalDirs && codexSettings.additionalDirs.length > 0) {
         for (const dir of codexSettings.additionalDirs) {
-          globalArgs.push(CODEX_ADD_DIR_FLAG, dir);
+          preExecArgs.push(CODEX_ADD_DIR_FLAG, dir);
         }
       }
 
       const args = [
-        ...globalArgs,
         CODEX_EXEC_SUBCOMMAND,
+        CODEX_SKIP_GIT_REPO_CHECK_FLAG,
+        CODEX_APPROVAL_FLAG,
+        approvalPolicy,
+        ...preExecArgs,
         CODEX_MODEL_FLAG,
         options.model,
         CODEX_JSON_FLAG,

@@ -193,9 +193,9 @@ describe('codex-provider.ts', () => {
       expect(call.args[approvalIndex + 1]).toBe('never');
       expect(approvalIndex).toBeGreaterThan(-1);
       expect(execIndex).toBeGreaterThan(-1);
-      expect(approvalIndex).toBeLessThan(execIndex);
+      expect(approvalIndex).toBeGreaterThan(execIndex);
       expect(searchIndex).toBeGreaterThan(-1);
-      expect(searchIndex).toBeLessThan(execIndex);
+      expect(searchIndex).toBeGreaterThan(execIndex);
     });
 
     it('injects user and project instructions when auto-load is enabled', async () => {
