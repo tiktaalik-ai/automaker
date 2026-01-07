@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// Note: persist middleware removed - settings now sync via API (use-settings-sync.ts)
 
 // CLI Installation Status
 export interface CliStatus {
@@ -144,66 +144,52 @@ const initialState: SetupState = {
   skipClaudeSetup: shouldSkipSetup,
 };
 
-export const useSetupStore = create<SetupState & SetupActions>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
+export const useSetupStore = create<SetupState & SetupActions>()((set, get) => ({
+  ...initialState,
 
-      // Setup flow
-      setCurrentStep: (step) => set({ currentStep: step }),
+  // Setup flow
+  setCurrentStep: (step) => set({ currentStep: step }),
 
-      setSetupComplete: (complete) =>
-        set({
-          setupComplete: complete,
-          currentStep: complete ? 'complete' : 'welcome',
-        }),
-
-      completeSetup: () => set({ setupComplete: true, currentStep: 'complete' }),
-
-      resetSetup: () =>
-        set({
-          ...initialState,
-          isFirstRun: false, // Don't reset first run flag
-        }),
-
-      setIsFirstRun: (isFirstRun) => set({ isFirstRun }),
-
-      // Claude CLI
-      setClaudeCliStatus: (status) => set({ claudeCliStatus: status }),
-
-      setClaudeAuthStatus: (status) => set({ claudeAuthStatus: status }),
-
-      setClaudeInstallProgress: (progress) =>
-        set({
-          claudeInstallProgress: {
-            ...get().claudeInstallProgress,
-            ...progress,
-          },
-        }),
-
-      resetClaudeInstallProgress: () =>
-        set({
-          claudeInstallProgress: { ...initialInstallProgress },
-        }),
-
-      // GitHub CLI
-      setGhCliStatus: (status) => set({ ghCliStatus: status }),
-
-      // Cursor CLI
-      setCursorCliStatus: (status) => set({ cursorCliStatus: status }),
-
-      // Preferences
-      setSkipClaudeSetup: (skip) => set({ skipClaudeSetup: skip }),
+  setSetupComplete: (complete) =>
+    set({
+      setupComplete: complete,
+      currentStep: complete ? 'complete' : 'welcome',
     }),
-    {
-      name: 'automaker-setup',
-      version: 1, // Add version field for proper hydration (matches app-store pattern)
-      partialize: (state) => ({
-        isFirstRun: state.isFirstRun,
-        setupComplete: state.setupComplete,
-        skipClaudeSetup: state.skipClaudeSetup,
-        claudeAuthStatus: state.claudeAuthStatus,
-      }),
-    }
-  )
-);
+
+  completeSetup: () => set({ setupComplete: true, currentStep: 'complete' }),
+
+  resetSetup: () =>
+    set({
+      ...initialState,
+      isFirstRun: false, // Don't reset first run flag
+    }),
+
+  setIsFirstRun: (isFirstRun) => set({ isFirstRun }),
+
+  // Claude CLI
+  setClaudeCliStatus: (status) => set({ claudeCliStatus: status }),
+
+  setClaudeAuthStatus: (status) => set({ claudeAuthStatus: status }),
+
+  setClaudeInstallProgress: (progress) =>
+    set({
+      claudeInstallProgress: {
+        ...get().claudeInstallProgress,
+        ...progress,
+      },
+    }),
+
+  resetClaudeInstallProgress: () =>
+    set({
+      claudeInstallProgress: { ...initialInstallProgress },
+    }),
+
+  // GitHub CLI
+  setGhCliStatus: (status) => set({ ghCliStatus: status }),
+
+  // Cursor CLI
+  setCursorCliStatus: (status) => set({ cursorCliStatus: status }),
+
+  // Preferences
+  setSkipClaudeSetup: (skip) => set({ skipClaudeSetup: skip }),
+}));

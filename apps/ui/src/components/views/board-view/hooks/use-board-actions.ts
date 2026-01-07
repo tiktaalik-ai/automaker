@@ -23,7 +23,12 @@ interface UseBoardActionsProps {
   runningAutoTasks: string[];
   loadFeatures: () => Promise<void>;
   persistFeatureCreate: (feature: Feature) => Promise<void>;
-  persistFeatureUpdate: (featureId: string, updates: Partial<Feature>) => Promise<void>;
+  persistFeatureUpdate: (
+    featureId: string,
+    updates: Partial<Feature>,
+    descriptionHistorySource?: 'enhance' | 'edit',
+    enhancementMode?: 'improve' | 'technical' | 'simplify' | 'acceptance'
+  ) => Promise<void>;
   persistFeatureDelete: (featureId: string) => Promise<void>;
   saveCategory: (category: string) => Promise<void>;
   setEditingFeature: (feature: Feature | null) => void;
@@ -221,7 +226,9 @@ export function useBoardActions({
         priority: number;
         planningMode?: PlanningMode;
         requirePlanApproval?: boolean;
-      }
+      },
+      descriptionHistorySource?: 'enhance' | 'edit',
+      enhancementMode?: 'improve' | 'technical' | 'simplify' | 'acceptance'
     ) => {
       const finalBranchName = updates.branchName || undefined;
 
@@ -265,7 +272,7 @@ export function useBoardActions({
       };
 
       updateFeature(featureId, finalUpdates);
-      persistFeatureUpdate(featureId, finalUpdates);
+      persistFeatureUpdate(featureId, finalUpdates, descriptionHistorySource, enhancementMode);
       if (updates.category) {
         saveCategory(updates.category);
       }

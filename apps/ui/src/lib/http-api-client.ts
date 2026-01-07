@@ -1183,8 +1183,20 @@ export class HttpApiClient implements ElectronAPI {
       this.post('/api/features/get', { projectPath, featureId }),
     create: (projectPath: string, feature: Feature) =>
       this.post('/api/features/create', { projectPath, feature }),
-    update: (projectPath: string, featureId: string, updates: Partial<Feature>) =>
-      this.post('/api/features/update', { projectPath, featureId, updates }),
+    update: (
+      projectPath: string,
+      featureId: string,
+      updates: Partial<Feature>,
+      descriptionHistorySource?: 'enhance' | 'edit',
+      enhancementMode?: 'improve' | 'technical' | 'simplify' | 'acceptance'
+    ) =>
+      this.post('/api/features/update', {
+        projectPath,
+        featureId,
+        updates,
+        descriptionHistorySource,
+        enhancementMode,
+      }),
     delete: (projectPath: string, featureId: string) =>
       this.post('/api/features/delete', { projectPath, featureId }),
     getAgentOutput: (projectPath: string, featureId: string) =>

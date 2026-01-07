@@ -358,10 +358,10 @@ export function PhaseModelSelector({
           </PopoverTrigger>
           <PopoverContent
             side="right"
-            align="center"
-            avoidCollisions={false}
+            align="start"
             className="w-[220px] p-1"
             sideOffset={8}
+            collisionPadding={16}
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <div className="space-y-1">
@@ -474,10 +474,10 @@ export function PhaseModelSelector({
           </PopoverTrigger>
           <PopoverContent
             side="right"
-            align="center"
-            avoidCollisions={false}
+            align="start"
             className="w-[220px] p-1"
             sideOffset={8}
+            collisionPadding={16}
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <div className="space-y-1">

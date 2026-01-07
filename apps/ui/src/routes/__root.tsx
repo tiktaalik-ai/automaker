@@ -33,9 +33,10 @@ function RootLayoutContent() {
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
   const [streamerPanelOpen, setStreamerPanelOpen] = useState(false);
-  const [setupHydrated, setSetupHydrated] = useState(
-    () => useSetupStore.persist?.hasHydrated?.() ?? false
-  );
+  // Since we removed persist middleware (settings now sync via API),
+  // we consider the store "hydrated" immediately - the useSettingsMigration
+  // hook in App.tsx handles loading settings from the API
+  const [setupHydrated, setSetupHydrated] = useState(true);
   const authChecked = useAuthStore((s) => s.authChecked);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { openFileBrowser } = useFileBrowser();
@@ -140,23 +141,8 @@ function RootLayoutContent() {
     initAuth();
   }, []); // Runs once per load; auth state drives routing rules
 
-  // Wait for setup store hydration before enforcing routing rules
-  useEffect(() => {
-    if (useSetupStore.persist?.hasHydrated?.()) {
-      setSetupHydrated(true);
-      return;
-    }
-
-    const unsubscribe = useSetupStore.persist?.onFinishHydration?.(() => {
-      setSetupHydrated(true);
-    });
-
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
-  }, []);
+  // Note: Setup store hydration is handled by useSettingsMigration in App.tsx
+  // No need to wait for persist middleware hydration since we removed it
 
   // Routing rules (web mode and external server mode):
   // - If not authenticated: force /login (even /setup is protected)

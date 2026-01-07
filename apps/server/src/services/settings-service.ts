@@ -162,6 +162,16 @@ export class SettingsService {
       needsSave = true;
     }
 
+    // Migration v3 -> v4: Add onboarding/setup wizard state fields
+    // Older settings files never stored setup state in settings.json (it lived in localStorage),
+    // so default to "setup complete" for existing installs to avoid forcing re-onboarding.
+    if (storedVersion < 4) {
+      if (settings.setupComplete === undefined) result.setupComplete = true;
+      if (settings.isFirstRun === undefined) result.isFirstRun = false;
+      if (settings.skipClaudeSetup === undefined) result.skipClaudeSetup = false;
+      needsSave = true;
+    }
+
     // Update version if any migration occurred
     if (needsSave) {
       result.version = SETTINGS_VERSION;
@@ -515,8 +525,26 @@ export class SettingsService {
         }
       }
 
+      // Parse setup wizard state (previously stored in localStorage)
+      let setupState: Record<string, unknown> = {};
+      if (localStorageData['automaker-setup']) {
+        try {
+          const parsed = JSON.parse(localStorageData['automaker-setup']);
+          setupState = parsed.state || parsed;
+        } catch (e) {
+          errors.push(`Failed to parse automaker-setup: ${e}`);
+        }
+      }
+
       // Extract global settings
       const globalSettings: Partial<GlobalSettings> = {
+        setupComplete:
+          setupState.setupComplete !== undefined ? (setupState.setupComplete as boolean) : false,
+        isFirstRun: setupState.isFirstRun !== undefined ? (setupState.isFirstRun as boolean) : true,
+        skipClaudeSetup:
+          setupState.skipClaudeSetup !== undefined
+            ? (setupState.skipClaudeSetup as boolean)
+            : false,
         theme: (appState.theme as GlobalSettings['theme']) || 'dark',
         sidebarOpen: appState.sidebarOpen !== undefined ? (appState.sidebarOpen as boolean) : true,
         chatHistoryOpen: (appState.chatHistoryOpen as boolean) || false,
