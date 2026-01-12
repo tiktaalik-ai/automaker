@@ -57,6 +57,20 @@ docker-compose -f docker-compose.yml -f docker-compose.project.yml up -d
 
 **Tip**: Use `:ro` (read-only) when possible for extra safety.
 
+### Fixing File Permission Issues
+
+When mounting host directories, files created by the container may be owned by UID 1001 (the default container user), causing permission mismatches with your host user. To fix this, rebuild the image with your host UID/GID:
+
+```bash
+# Rebuild with your user's UID/GID
+UID=$(id -u) GID=$(id -g) docker-compose build
+
+# Then start normally
+docker-compose up -d
+```
+
+This creates the container user with the same UID/GID as your host user, so files in mounted volumes have correct ownership.
+
 ## CLI Authentication (macOS)
 
 On macOS, OAuth tokens are stored in Keychain (Claude) and SQLite (Cursor). Use these scripts to extract and pass them to the container:
@@ -117,3 +131,4 @@ volumes:
 | Can't access web UI   | Verify container is running with `docker ps \| grep automaker`                                                                                    |
 | Need a fresh start    | Run `docker-compose down && docker volume rm automaker-data && docker-compose up -d --build`                                                      |
 | Cursor auth fails     | Re-extract token with `./scripts/get-cursor-token.sh` - tokens expire periodically. Make sure you've run `cursor-agent login` on your host first. |
+| File permission errors | Rebuild with `UID=$(id -u) GID=$(id -g) docker-compose build` to match container user to your host user. See [Fixing File Permission Issues](#fixing-file-permission-issues). |

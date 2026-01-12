@@ -28,6 +28,11 @@ services:
       context: .
       dockerfile: Dockerfile
       target: server
+      args:
+        # Match container user to host user for mounted volume permissions
+        # Override with: UID=$(id -u) GID=$(id -g) docker-compose build
+        UID: ${UID:-1001}
+        GID: ${GID:-1001}
     container_name: automaker-server
     restart: unless-stopped
     ports:
