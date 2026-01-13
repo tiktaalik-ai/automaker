@@ -89,6 +89,7 @@ export const TEST_IDS = {
   agentView: 'agent-view',
   settingsView: 'settings-view',
   welcomeView: 'welcome-view',
+  dashboardView: 'dashboard-view',
   setupView: 'setup-view',
 
   // Board View Components

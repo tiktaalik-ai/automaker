@@ -99,6 +99,8 @@ export class ClaudeProvider extends BaseProvider {
       ...(maxThinkingTokens && { maxThinkingTokens }),
       // Subagents configuration for specialized task delegation
       ...(options.agents && { agents: options.agents }),
+      // Pass through outputFormat for structured JSON outputs
+      ...(options.outputFormat && { outputFormat: options.outputFormat }),
     };
 
     // Build prompt payload

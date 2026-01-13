@@ -45,7 +45,7 @@ export function WorktreeSettingsDialog({
                   className="text-sm font-medium cursor-pointer flex items-center gap-2"
                 >
                   <GitBranch className="w-4 h-4 text-brand-500" />
-                  Use selected worktree branch
+                  Default to worktree mode
                 </Label>
                 <Switch
                   id="worktree-branch-toggle"
@@ -55,8 +55,8 @@ export function WorktreeSettingsDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                When enabled, the Add Feature dialog will default to custom branch mode with the
-                currently selected worktree branch pre-filled.
+                New features will automatically use isolated worktrees, keeping changes separate
+                from your main branch until you're ready to merge.
               </p>
             </div>
           </div>

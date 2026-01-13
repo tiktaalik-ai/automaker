@@ -21,7 +21,8 @@ import {
   FeatureTextFilePath as DescriptionTextFilePath,
   ImagePreviewMap,
 } from '@/components/ui/description-image-dropzone';
-import { GitBranch, Cpu, FolderKanban } from 'lucide-react';
+import { GitBranch, Cpu, FolderKanban, Settings2 } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { cn, modelSupportsThinking } from '@/lib/utils';
 import { Feature, ModelAlias, ThinkingLevel, useAppStore, PlanningMode } from '@/store/app-store';
@@ -86,6 +87,7 @@ export function EditFeatureDialog({
   isMaximized,
   allFeatures,
 }: EditFeatureDialogProps) {
+  const navigate = useNavigate();
   const [editingFeature, setEditingFeature] = useState<Feature | null>(feature);
   // Derive initial workMode from feature's branchName
   const [workMode, setWorkMode] = useState<WorkMode>(() => {
@@ -363,9 +365,31 @@ export function EditFeatureDialog({
 
           {/* AI & Execution Section */}
           <div className={cardClass}>
-            <div className={sectionHeaderClass}>
-              <Cpu className="w-4 h-4 text-muted-foreground" />
-              <span>AI & Execution</span>
+            <div className="flex items-center justify-between">
+              <div className={sectionHeaderClass}>
+                <Cpu className="w-4 h-4 text-muted-foreground" />
+                <span>AI & Execution</span>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate({ to: '/settings', search: { view: 'defaults' } });
+                      }}
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      <span>Edit Defaults</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Change default model and planning settings for new features</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="space-y-1.5">

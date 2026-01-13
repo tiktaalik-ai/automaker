@@ -117,7 +117,7 @@ export function CreatePRDialog({
               description: `PR already exists for ${result.result.branch}`,
               action: {
                 label: 'View PR',
-                onClick: () => window.open(result.result!.prUrl!, '_blank'),
+                onClick: () => window.open(result.result!.prUrl!, '_blank', 'noopener,noreferrer'),
               },
             });
           } else {
@@ -125,7 +125,7 @@ export function CreatePRDialog({
               description: `PR created from ${result.result.branch}`,
               action: {
                 label: 'View PR',
-                onClick: () => window.open(result.result!.prUrl!, '_blank'),
+                onClick: () => window.open(result.result!.prUrl!, '_blank', 'noopener,noreferrer'),
               },
             });
           }
@@ -251,7 +251,10 @@ export function CreatePRDialog({
               <p className="text-sm text-muted-foreground mt-1">Your PR is ready for review</p>
             </div>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => window.open(prUrl, '_blank')} className="gap-2">
+              <Button
+                onClick={() => window.open(prUrl, '_blank', 'noopener,noreferrer')}
+                className="gap-2"
+              >
                 <ExternalLink className="w-4 h-4" />
                 View Pull Request
               </Button>
@@ -277,7 +280,7 @@ export function CreatePRDialog({
               <Button
                 onClick={() => {
                   if (browserUrl) {
-                    window.open(browserUrl, '_blank');
+                    window.open(browserUrl, '_blank', 'noopener,noreferrer');
                   }
                 }}
                 className="gap-2 w-full"

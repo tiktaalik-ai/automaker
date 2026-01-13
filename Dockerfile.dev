@@ -27,9 +27,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Claude CLI globally
 RUN npm install -g @anthropic-ai/claude-code
 
-# Create non-root user
-RUN groupadd -g 1001 automaker && \
-    useradd -u 1001 -g automaker -m -d /home/automaker -s /bin/bash automaker && \
+# Build arguments for user ID matching (allows matching host user for mounted volumes)
+# Override at build time: docker-compose build --build-arg UID=$(id -u) --build-arg GID=$(id -g)
+ARG UID=1001
+ARG GID=1001
+
+# Create non-root user with configurable UID/GID
+# Use -o flag to allow non-unique IDs (GID 1000 may already exist as 'node' group)
+RUN groupadd -o -g ${GID} automaker && \
+    useradd -o -u ${UID} -g automaker -m -d /home/automaker -s /bin/bash automaker && \
     mkdir -p /home/automaker/.local/bin && \
     mkdir -p /home/automaker/.cursor && \
     chown -R automaker:automaker /home/automaker && \

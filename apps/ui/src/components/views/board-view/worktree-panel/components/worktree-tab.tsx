@@ -298,20 +298,29 @@ export function WorktreeTab({
       )}
 
       {isDevServerRunning && (
-        <Button
-          variant={isSelected ? 'default' : 'outline'}
-          size="sm"
-          className={cn(
-            'h-7 w-7 p-0 rounded-none border-r-0',
-            isSelected && 'bg-primary text-primary-foreground',
-            !isSelected && 'bg-secondary/50 hover:bg-secondary',
-            'text-green-500'
-          )}
-          onClick={() => onOpenDevServerUrl(worktree)}
-          title={`Open dev server (port ${devServerInfo?.port})`}
-        >
-          <Globe className="w-3 h-3" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isSelected ? 'default' : 'outline'}
+                size="sm"
+                className={cn(
+                  'h-7 w-7 p-0 rounded-none border-r-0',
+                  isSelected && 'bg-primary text-primary-foreground',
+                  !isSelected && 'bg-secondary/50 hover:bg-secondary',
+                  'text-green-500'
+                )}
+                onClick={() => onOpenDevServerUrl(worktree)}
+                aria-label={`Open dev server on port ${devServerInfo?.port} in browser`}
+              >
+                <Globe className="w-3 h-3" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Open dev server (:{devServerInfo?.port})</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       <WorktreeActionsDropdown

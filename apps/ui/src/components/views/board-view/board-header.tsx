@@ -138,7 +138,7 @@ export function BoardHeader({
           <div className={controlContainerClass} data-testid="worktrees-toggle-container">
             <GitBranch className="w-4 h-4 text-muted-foreground" />
             <Label htmlFor="worktrees-toggle" className="text-sm font-medium cursor-pointer">
-              Worktrees
+              Worktree Bar
             </Label>
             <Switch
               id="worktrees-toggle"

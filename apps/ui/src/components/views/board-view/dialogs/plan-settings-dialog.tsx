@@ -45,7 +45,7 @@ export function PlanSettingsDialog({
                   className="text-sm font-medium cursor-pointer flex items-center gap-2"
                 >
                   <GitBranch className="w-4 h-4 text-brand-500" />
-                  Use selected worktree branch
+                  Default to worktree mode
                 </Label>
                 <Switch
                   id="plan-worktree-branch-toggle"
@@ -55,8 +55,8 @@ export function PlanSettingsDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                When enabled, features created via the Plan dialog will be assigned to the currently
-                selected worktree branch. When disabled, features will be added to the main branch.
+                Planned features will automatically use isolated worktrees, keeping changes separate
+                from your main branch until you're ready to merge.
               </p>
             </div>
           </div>

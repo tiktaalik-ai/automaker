@@ -190,7 +190,7 @@ export async function* spawnJSONLProcess(options: SubprocessOptions): AsyncGener
  * Spawns a subprocess and collects all output
  */
 export async function spawnProcess(options: SubprocessOptions): Promise<SubprocessResult> {
-  const { command, args, cwd, env, abortController } = options;
+  const { command, args, cwd, env, abortController, stdinData } = options;
 
   const processEnv = {
     ...process.env,
@@ -204,9 +204,14 @@ export async function spawnProcess(options: SubprocessOptions): Promise<Subproce
     const childProcess = spawn(command, args, {
       cwd,
       env: processEnv,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: [stdinData ? 'pipe' : 'ignore', 'pipe', 'pipe'],
       shell: needsShell,
     });
+
+    if (stdinData && childProcess.stdin) {
+      childProcess.stdin.write(stdinData);
+      childProcess.stdin.end();
+    }
 
     let stdout = '';
     let stderr = '';

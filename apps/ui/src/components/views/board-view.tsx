@@ -422,6 +422,31 @@ export function BoardView() {
   const selectedWorktreeBranch =
     currentWorktreeBranch || worktrees.find((w) => w.isMain)?.branch || 'main';
 
+  // Helper function to add and select a worktree
+  const addAndSelectWorktree = useCallback(
+    (worktreeResult: { path: string; branch: string }) => {
+      if (!currentProject) return;
+
+      const currentWorktrees = getWorktrees(currentProject.path);
+      const existingWorktree = currentWorktrees.find((w) => w.branch === worktreeResult.branch);
+
+      // Only add if it doesn't already exist (to avoid duplicates)
+      if (!existingWorktree) {
+        const newWorktreeInfo = {
+          path: worktreeResult.path,
+          branch: worktreeResult.branch,
+          isMain: false,
+          isCurrent: false,
+          hasWorktree: true,
+        };
+        setWorktrees(currentProject.path, [...currentWorktrees, newWorktreeInfo]);
+      }
+      // Select the worktree (whether it existed or was just added)
+      setCurrentWorktree(currentProject.path, worktreeResult.path, worktreeResult.branch);
+    },
+    [currentProject, getWorktrees, setWorktrees, setCurrentWorktree]
+  );
+
   // Extract all action handlers into a hook
   const {
     handleAddFeature,
@@ -467,43 +492,90 @@ export function BoardView() {
     outputFeature,
     projectPath: currentProject?.path || null,
     onWorktreeCreated: () => setWorktreeRefreshKey((k) => k + 1),
-    onWorktreeAutoSelect: (newWorktree) => {
-      if (!currentProject) return;
-      // Check if worktree already exists in the store (by branch name)
-      const currentWorktrees = getWorktrees(currentProject.path);
-      const existingWorktree = currentWorktrees.find((w) => w.branch === newWorktree.branch);
-
-      // Only add if it doesn't already exist (to avoid duplicates)
-      if (!existingWorktree) {
-        const newWorktreeInfo = {
-          path: newWorktree.path,
-          branch: newWorktree.branch,
-          isMain: false,
-          isCurrent: false,
-          hasWorktree: true,
-        };
-        setWorktrees(currentProject.path, [...currentWorktrees, newWorktreeInfo]);
-      }
-      // Select the worktree (whether it existed or was just added)
-      setCurrentWorktree(currentProject.path, newWorktree.path, newWorktree.branch);
-    },
+    onWorktreeAutoSelect: addAndSelectWorktree,
     currentWorktreeBranch,
   });
 
   // Handler for bulk updating multiple features
   const handleBulkUpdate = useCallback(
-    async (updates: Partial<Feature>) => {
+    async (updates: Partial<Feature>, workMode: 'current' | 'auto' | 'custom') => {
       if (!currentProject || selectedFeatureIds.size === 0) return;
 
       try {
+        // Determine final branch name based on work mode:
+        // - 'current': Empty string to clear branch assignment (work on main/current branch)
+        // - 'auto': Auto-generate branch name based on current branch
+        // - 'custom': Use the provided branch name
+        let finalBranchName: string | undefined;
+
+        if (workMode === 'current') {
+          // Empty string clears the branch assignment, moving features to main/current branch
+          finalBranchName = '';
+        } else if (workMode === 'auto') {
+          // Auto-generate a branch name based on current branch and timestamp
+          const baseBranch =
+            currentWorktreeBranch || getPrimaryWorktreeBranch(currentProject.path) || 'main';
+          const timestamp = Date.now();
+          const randomSuffix = Math.random().toString(36).substring(2, 6);
+          finalBranchName = `feature/${baseBranch}-${timestamp}-${randomSuffix}`;
+        } else {
+          // Custom mode - use provided branch name
+          finalBranchName = updates.branchName || undefined;
+        }
+
+        // Create worktree for 'auto' or 'custom' modes when we have a branch name
+        if ((workMode === 'auto' || workMode === 'custom') && finalBranchName) {
+          try {
+            const electronApi = getElectronAPI();
+            if (electronApi?.worktree?.create) {
+              const result = await electronApi.worktree.create(
+                currentProject.path,
+                finalBranchName
+              );
+              if (result.success && result.worktree) {
+                logger.info(
+                  `Worktree for branch "${finalBranchName}" ${
+                    result.worktree?.isNew ? 'created' : 'already exists'
+                  }`
+                );
+                // Auto-select the worktree when creating/using it for bulk update
+                addAndSelectWorktree(result.worktree);
+                // Refresh worktree list in UI
+                setWorktreeRefreshKey((k) => k + 1);
+              } else if (!result.success) {
+                logger.error(
+                  `Failed to create worktree for branch "${finalBranchName}":`,
+                  result.error
+                );
+                toast.error('Failed to create worktree', {
+                  description: result.error || 'An error occurred',
+                });
+                return; // Don't proceed with update if worktree creation failed
+              }
+            }
+          } catch (error) {
+            logger.error('Error creating worktree:', error);
+            toast.error('Failed to create worktree', {
+              description: error instanceof Error ? error.message : 'An error occurred',
+            });
+            return; // Don't proceed with update if worktree creation failed
+          }
+        }
+
+        // Use the final branch name in updates
+        const finalUpdates = {
+          ...updates,
+          branchName: finalBranchName,
+        };
+
         const api = getHttpApiClient();
         const featureIds = Array.from(selectedFeatureIds);
-        const result = await api.features.bulkUpdate(currentProject.path, featureIds, updates);
+        const result = await api.features.bulkUpdate(currentProject.path, featureIds, finalUpdates);
 
         if (result.success) {
           // Update local state
           featureIds.forEach((featureId) => {
-            updateFeature(featureId, updates);
+            updateFeature(featureId, finalUpdates);
           });
           toast.success(`Updated ${result.updatedCount} features`);
           exitSelectionMode();
@@ -517,7 +589,16 @@ export function BoardView() {
         toast.error('Failed to update features');
       }
     },
-    [currentProject, selectedFeatureIds, updateFeature, exitSelectionMode]
+    [
+      currentProject,
+      selectedFeatureIds,
+      updateFeature,
+      exitSelectionMode,
+      currentWorktreeBranch,
+      getPrimaryWorktreeBranch,
+      addAndSelectWorktree,
+      setWorktreeRefreshKey,
+    ]
   );
 
   // Handler for bulk deleting multiple features
@@ -1325,6 +1406,9 @@ export function BoardView() {
         onClose={() => setShowMassEditDialog(false)}
         selectedFeatures={selectedFeatures}
         onApply={handleBulkUpdate}
+        branchSuggestions={branchSuggestions}
+        branchCardCounts={branchCardCounts}
+        currentBranch={currentWorktreeBranch || undefined}
       />
 
       {/* Board Background Modal */}

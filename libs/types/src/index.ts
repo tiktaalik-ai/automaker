@@ -79,6 +79,7 @@ export {
   type ModelAlias,
   type CodexModelId,
   type AgentModel,
+  type ModelId,
 } from './model.js';
 
 // Event types

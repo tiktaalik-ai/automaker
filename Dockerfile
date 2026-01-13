@@ -59,6 +59,11 @@ FROM node:22-slim AS server
 ARG GIT_COMMIT_SHA=unknown
 LABEL automaker.git.commit.sha="${GIT_COMMIT_SHA}"
 
+# Build arguments for user ID matching (allows matching host user for mounted volumes)
+# Override at build time: docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) ...
+ARG UID=1001
+ARG GID=1001
+
 # Install git, curl, bash (for terminal), gosu (for user switching), and GitHub CLI (pinned version, multi-arch)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl bash gosu ca-certificates openssh-client \
@@ -79,8 +84,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm install -g @anthropic-ai/claude-code
 
 # Create non-root user with home directory BEFORE installing Cursor CLI
-RUN groupadd -g 1001 automaker && \
-    useradd -u 1001 -g automaker -m -d /home/automaker -s /bin/bash automaker && \
+# Uses UID/GID build args to match host user for mounted volume permissions
+# Use -o flag to allow non-unique IDs (GID 1000 may already exist as 'node' group)
+RUN groupadd -o -g ${GID} automaker && \
+    useradd -o -u ${UID} -g automaker -m -d /home/automaker -s /bin/bash automaker && \
     mkdir -p /home/automaker/.local/bin && \
     mkdir -p /home/automaker/.cursor && \
     chown -R automaker:automaker /home/automaker && \
@@ -95,6 +102,12 @@ RUN curl https://cursor.com/install -fsS | bash && \
     ls -la /home/automaker/.local/bin/ && \
     echo "=== PATH is: $PATH ===" && \
     (which cursor-agent && cursor-agent --version) || echo "cursor-agent installed (may need auth setup)"
+
+# Install OpenCode CLI (for multi-provider AI model access)
+RUN curl -fsSL https://opencode.ai/install | bash && \
+    echo "=== Checking OpenCode CLI installation ===" && \
+    ls -la /home/automaker/.local/bin/ && \
+    (which opencode && opencode --version) || echo "opencode installed (may need auth setup)"
 USER root
 
 # Add PATH to profile so it's available in all interactive shells (for login shells)

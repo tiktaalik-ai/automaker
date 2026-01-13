@@ -37,8 +37,8 @@ export const GLOBAL_NAV_GROUPS: NavigationGroup[] = [
   {
     label: 'Model & Prompts',
     items: [
-      { id: 'model-defaults', label: 'Model Defaults', icon: Workflow },
       { id: 'defaults', label: 'Feature Defaults', icon: FlaskConical },
+      { id: 'model-defaults', label: 'Model Defaults', icon: Workflow },
       { id: 'worktrees', label: 'Worktrees', icon: GitBranch },
       { id: 'prompts', label: 'Prompt Customization', icon: MessageSquareText },
       { id: 'api-keys', label: 'API Keys', icon: Key },

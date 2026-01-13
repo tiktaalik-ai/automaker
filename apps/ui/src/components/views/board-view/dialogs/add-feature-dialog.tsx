@@ -21,7 +21,8 @@ import {
   FeatureTextFilePath as DescriptionTextFilePath,
   ImagePreviewMap,
 } from '@/components/ui/description-image-dropzone';
-import { Play, Cpu, FolderKanban } from 'lucide-react';
+import { Play, Cpu, FolderKanban, Settings2 } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { modelSupportsThinking } from '@/lib/utils';
@@ -33,7 +34,7 @@ import {
   PlanningMode,
   Feature,
 } from '@/store/app-store';
-import type { ReasoningEffort, PhaseModelEntry } from '@automaker/types';
+import type { ReasoningEffort, PhaseModelEntry, AgentModel } from '@automaker/types';
 import { supportsReasoningEffort, isClaudeModel } from '@automaker/types';
 import {
   TestingTabContent,
@@ -122,7 +123,7 @@ interface AddFeatureDialogProps {
   selectedNonMainWorktreeBranch?: string;
   /**
    * When true, forces the dialog to default to 'current' work mode (work on current branch).
-   * This is used when the "Use selected worktree branch" setting is disabled.
+   * This is used when the "Default to worktree mode" setting is disabled.
    */
   forceCurrentBranchMode?: boolean;
 }
@@ -152,6 +153,7 @@ export function AddFeatureDialog({
   forceCurrentBranchMode,
 }: AddFeatureDialogProps) {
   const isSpawnMode = !!parentFeature;
+  const navigate = useNavigate();
   const [workMode, setWorkMode] = useState<WorkMode>('current');
 
   // Form state
@@ -187,7 +189,8 @@ export function AddFeatureDialog({
   const [selectedAncestorIds, setSelectedAncestorIds] = useState<Set<string>>(new Set());
 
   // Get defaults from store
-  const { defaultPlanningMode, defaultRequirePlanApproval, useWorktrees } = useAppStore();
+  const { defaultPlanningMode, defaultRequirePlanApproval, useWorktrees, defaultFeatureModel } =
+    useAppStore();
 
   // Track previous open state to detect when dialog opens
   const wasOpenRef = useRef(false);
@@ -207,7 +210,7 @@ export function AddFeatureDialog({
       );
       setPlanningMode(defaultPlanningMode);
       setRequirePlanApproval(defaultRequirePlanApproval);
-      setModelEntry({ model: 'opus' });
+      setModelEntry(defaultFeatureModel);
 
       // Initialize description history (empty for new feature)
       setDescriptionHistory([]);
@@ -228,6 +231,7 @@ export function AddFeatureDialog({
     defaultBranch,
     defaultPlanningMode,
     defaultRequirePlanApproval,
+    defaultFeatureModel,
     useWorktrees,
     selectedNonMainWorktreeBranch,
     forceCurrentBranchMode,
@@ -318,7 +322,7 @@ export function AddFeatureDialog({
     // When a non-main worktree is selected, use its branch name for custom mode
     setBranchName(selectedNonMainWorktreeBranch || '');
     setPriority(2);
-    setModelEntry({ model: 'opus' });
+    setModelEntry(defaultFeatureModel);
     setWorkMode(
       getDefaultWorkMode(useWorktrees, selectedNonMainWorktreeBranch, forceCurrentBranchMode)
     );
@@ -473,9 +477,31 @@ export function AddFeatureDialog({
 
           {/* AI & Execution Section */}
           <div className={cardClass}>
-            <div className={sectionHeaderClass}>
-              <Cpu className="w-4 h-4 text-muted-foreground" />
-              <span>AI & Execution</span>
+            <div className="flex items-center justify-between">
+              <div className={sectionHeaderClass}>
+                <Cpu className="w-4 h-4 text-muted-foreground" />
+                <span>AI & Execution</span>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate({ to: '/settings', search: { view: 'defaults' } });
+                      }}
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      <span>Edit Defaults</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Change default model and planning settings for new features</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className="space-y-1.5">
