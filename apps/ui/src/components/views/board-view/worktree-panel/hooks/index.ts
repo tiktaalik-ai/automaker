@@ -1,5 +1,6 @@
 export { useWorktrees } from './use-worktrees';
 export { useDevServers } from './use-dev-servers';
+export { useDevServerLogs } from './use-dev-server-logs';
 export { useBranches } from './use-branches';
 export { useWorktreeActions } from './use-worktree-actions';
 export { useRunningFeatures } from './use-running-features';

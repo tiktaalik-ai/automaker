@@ -1760,6 +1760,22 @@ function createMockWorktreeAPI(): WorktreeAPI {
       };
     },
 
+    getDevServerLogs: async (worktreePath: string) => {
+      console.log('[Mock] Getting dev server logs:', { worktreePath });
+      return {
+        success: false,
+        error: 'No dev server running for this worktree',
+      };
+    },
+
+    onDevServerLogEvent: (callback) => {
+      console.log('[Mock] Subscribing to dev server log events');
+      // Return unsubscribe function
+      return () => {
+        console.log('[Mock] Unsubscribing from dev server log events');
+      };
+    },
+
     getPRInfo: async (worktreePath: string, branchName: string) => {
       console.log('[Mock] Getting PR info:', { worktreePath, branchName });
       return {

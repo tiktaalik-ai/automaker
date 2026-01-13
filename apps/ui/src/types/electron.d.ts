@@ -978,6 +978,43 @@ export interface WorktreeAPI {
     error?: string;
   }>;
 
+  // Get buffered logs for a dev server
+  getDevServerLogs: (worktreePath: string) => Promise<{
+    success: boolean;
+    result?: {
+      worktreePath: string;
+      port: number;
+      logs: string;
+      startedAt: string;
+    };
+    error?: string;
+  }>;
+
+  // Subscribe to dev server log events (started, output, stopped)
+  onDevServerLogEvent: (
+    callback: (
+      event:
+        | {
+            type: 'dev-server:started';
+            payload: { worktreePath: string; port: number; url: string; timestamp: string };
+          }
+        | {
+            type: 'dev-server:output';
+            payload: { worktreePath: string; content: string; timestamp: string };
+          }
+        | {
+            type: 'dev-server:stopped';
+            payload: {
+              worktreePath: string;
+              port: number;
+              exitCode: number | null;
+              error?: string;
+              timestamp: string;
+            };
+          }
+    ) => void
+  ) => () => void;
+
   // Get PR info and comments for a branch
   getPRInfo: (
     worktreePath: string,

@@ -42,6 +42,9 @@ export type EventType =
   | 'ideation:idea-converted'
   | 'worktree:init-started'
   | 'worktree:init-output'
-  | 'worktree:init-completed';
+  | 'worktree:init-completed'
+  | 'dev-server:started'
+  | 'dev-server:output'
+  | 'dev-server:stopped';
 
 export type EventCallback = (type: EventType, payload: unknown) => void;

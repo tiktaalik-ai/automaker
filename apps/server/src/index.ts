@@ -67,6 +67,7 @@ import { createPipelineRoutes } from './routes/pipeline/index.js';
 import { pipelineService } from './services/pipeline-service.js';
 import { createIdeationRoutes } from './routes/ideation/index.js';
 import { IdeationService } from './services/ideation-service.js';
+import { getDevServerService } from './services/dev-server-service.js';
 
 // Load environment variables
 dotenv.config();
@@ -175,6 +176,10 @@ const codexModelCacheService = new CodexModelCacheService(DATA_DIR, codexAppServ
 const codexUsageService = new CodexUsageService(codexAppServerService);
 const mcpTestService = new MCPTestService(settingsService);
 const ideationService = new IdeationService(events, settingsService, featureLoader);
+
+// Initialize DevServerService with event emitter for real-time log streaming
+const devServerService = getDevServerService();
+devServerService.setEventEmitter(events);
 
 // Initialize services
 (async () => {

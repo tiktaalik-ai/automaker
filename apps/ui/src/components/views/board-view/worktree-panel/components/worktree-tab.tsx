@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { JSX } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Globe, Loader2, CircleDot, GitPullRequest } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,7 @@ interface WorktreeTabProps {
   onStartDevServer: (worktree: WorktreeInfo) => void;
   onStopDevServer: (worktree: WorktreeInfo) => void;
   onOpenDevServerUrl: (worktree: WorktreeInfo) => void;
+  onViewDevServerLogs: (worktree: WorktreeInfo) => void;
   onRunInitScript: (worktree: WorktreeInfo) => void;
   hasInitScript: boolean;
 }
@@ -87,6 +88,7 @@ export function WorktreeTab({
   onStartDevServer,
   onStopDevServer,
   onOpenDevServerUrl,
+  onViewDevServerLogs,
   onRunInitScript,
   hasInitScript,
 }: WorktreeTabProps) {
@@ -337,6 +339,7 @@ export function WorktreeTab({
         onStartDevServer={onStartDevServer}
         onStopDevServer={onStopDevServer}
         onOpenDevServerUrl={onOpenDevServerUrl}
+        onViewDevServerLogs={onViewDevServerLogs}
         onRunInitScript={onRunInitScript}
         hasInitScript={hasInitScript}
       />

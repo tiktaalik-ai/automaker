@@ -25,6 +25,7 @@ import {
   AlertCircle,
   RefreshCw,
   Copy,
+  ScrollText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,7 @@ interface WorktreeActionsDropdownProps {
   onStartDevServer: (worktree: WorktreeInfo) => void;
   onStopDevServer: (worktree: WorktreeInfo) => void;
   onOpenDevServerUrl: (worktree: WorktreeInfo) => void;
+  onViewDevServerLogs: (worktree: WorktreeInfo) => void;
   onRunInitScript: (worktree: WorktreeInfo) => void;
   hasInitScript: boolean;
 }
@@ -83,6 +85,7 @@ export function WorktreeActionsDropdown({
   onStartDevServer,
   onStopDevServer,
   onOpenDevServerUrl,
+  onViewDevServerLogs,
   onRunInitScript,
   hasInitScript,
 }: WorktreeActionsDropdownProps) {
@@ -146,6 +149,10 @@ export function WorktreeActionsDropdown({
             <DropdownMenuItem onClick={() => onOpenDevServerUrl(worktree)} className="text-xs">
               <Globe className="w-3.5 h-3.5 mr-2" />
               Open in Browser
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onViewDevServerLogs(worktree)} className="text-xs">
+              <ScrollText className="w-3.5 h-3.5 mr-2" />
+              View Logs
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onStopDevServer(worktree)}
