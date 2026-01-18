@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo, useCallback } from 'react';
+import { useEffect, useRef, useState, memo, useCallback, useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Edit2, Trash2, Palette, ChevronRight, Moon, Sun, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
@@ -130,8 +130,75 @@ export function ProjectContextMenu({
   const [showThemeSubmenu, setShowThemeSubmenu] = useState(false);
   const [removeConfirmed, setRemoveConfirmed] = useState(false);
   const themeSubmenuRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { handlePreviewEnter, handlePreviewLeave } = useThemePreview({ setPreviewTheme });
+
+  // Handler to open theme submenu and cancel any pending close
+  const handleThemeMenuEnter = useCallback(() => {
+    // Cancel any pending close timeout
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setShowThemeSubmenu(true);
+  }, []);
+
+  // Handler to close theme submenu with a small delay
+  // This prevents the submenu from closing when mouse crosses the gap between trigger and submenu
+  const handleThemeMenuLeave = useCallback(() => {
+    // Add a small delay before closing to allow mouse to reach submenu
+    closeTimeoutRef.current = setTimeout(() => {
+      setShowThemeSubmenu(false);
+      setPreviewTheme(null);
+    }, 100); // 100ms delay is enough to cross the gap
+  }, [setPreviewTheme]);
+
+  // Calculate submenu positioning to avoid viewport overflow
+  // Detects if submenu would overflow and flips it upward if needed
+  const submenuPosition = useMemo(() => {
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    // Estimated submenu height: ~620px for all themes + header + padding
+    const estimatedSubmenuHeight = 620;
+    // Extra padding from bottom to ensure full visibility
+    const collisionPadding = 32;
+    // The "Project Theme" button is approximately 50px down from the top of the context menu
+    const themeButtonOffset = 50;
+
+    // Calculate where the submenu's bottom edge would be if positioned normally
+    const submenuBottomY = position.y + themeButtonOffset + estimatedSubmenuHeight;
+
+    // Check if submenu would overflow bottom of viewport
+    const wouldOverflowBottom = submenuBottomY > viewportHeight - collisionPadding;
+
+    // If it would overflow, calculate how much to shift it up
+    if (wouldOverflowBottom) {
+      // Calculate the offset needed to align submenu bottom with viewport bottom minus padding
+      const overflowAmount = submenuBottomY - (viewportHeight - collisionPadding);
+      return {
+        top: -overflowAmount,
+        maxHeight: Math.min(estimatedSubmenuHeight, viewportHeight - collisionPadding * 2),
+      };
+    }
+
+    // Default: submenu opens at top of parent (aligned with the theme button)
+    return {
+      top: 0,
+      maxHeight: Math.min(
+        estimatedSubmenuHeight,
+        viewportHeight - position.y - themeButtonOffset - collisionPadding
+      ),
+    };
+  }, [position.y]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: globalThis.MouseEvent) => {
@@ -242,11 +309,8 @@ export function ProjectContextMenu({
             {/* Theme Submenu Trigger */}
             <div
               className="relative"
-              onMouseEnter={() => setShowThemeSubmenu(true)}
-              onMouseLeave={() => {
-                setShowThemeSubmenu(false);
-                setPreviewTheme(null);
-              }}
+              onMouseEnter={handleThemeMenuEnter}
+              onMouseLeave={handleThemeMenuLeave}
             >
               <button
                 onClick={() => setShowThemeSubmenu(!showThemeSubmenu)}
@@ -273,13 +337,18 @@ export function ProjectContextMenu({
                 <div
                   ref={themeSubmenuRef}
                   className={cn(
-                    'absolute left-full top-0 ml-1 min-w-[420px] rounded-lg',
+                    'absolute left-full ml-1 min-w-[420px] rounded-lg',
                     'bg-popover text-popover-foreground',
                     'border border-border shadow-lg',
                     'animate-in fade-in zoom-in-95 duration-100'
                   )}
-                  style={{ zIndex: Z_INDEX.THEME_SUBMENU }}
+                  style={{
+                    zIndex: Z_INDEX.THEME_SUBMENU,
+                    top: `${submenuPosition.top}px`,
+                  }}
                   data-testid="project-theme-submenu"
+                  onMouseEnter={handleThemeMenuEnter}
+                  onMouseLeave={handleThemeMenuLeave}
                 >
                   <div className="p-2">
                     {/* Use Global Option */}
@@ -306,7 +375,11 @@ export function ProjectContextMenu({
                     <div className="h-px bg-border my-2" />
 
                     {/* Two Column Layout - Using reusable ThemeColumn component */}
-                    <div className="flex gap-2">
+                    {/* Dynamic max height with scroll for viewport overflow handling */}
+                    <div
+                      className="flex gap-2 overflow-y-auto scrollbar-styled"
+                      style={{ maxHeight: `${submenuPosition.maxHeight - 80}px` }}
+                    >
                       <ThemeColumn
                         title="Dark"
                         icon={Moon}

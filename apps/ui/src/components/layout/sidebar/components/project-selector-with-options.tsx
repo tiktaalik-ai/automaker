@@ -246,6 +246,7 @@ export function ProjectSelectorWithOptions({
               <DropdownMenuSubContent
                 className="w-[420px] bg-popover/95 backdrop-blur-xl"
                 data-testid="project-theme-menu"
+                collisionPadding={32}
                 onPointerLeave={() => {
                   // Clear preview theme when leaving the dropdown
                   setPreviewTheme(null);
@@ -286,7 +287,8 @@ export function ProjectSelectorWithOptions({
                   </div>
                   <DropdownMenuSeparator />
                   {/* Two Column Layout */}
-                  <div className="flex gap-2 p-2">
+                  {/* Max height with scroll to ensure all themes are visible when menu is near screen edge */}
+                  <div className="flex gap-2 p-2 max-h-[60vh] overflow-y-auto scrollbar-styled">
                     {/* Dark Themes Column */}
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-muted-foreground">
